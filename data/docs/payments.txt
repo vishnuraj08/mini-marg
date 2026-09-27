@@ -1,0 +1,32 @@
+PAYMENTS AND TRANSACTIONS GUIDE - BFSI Banking Corp
+
+NEFT (National Electronic Funds Transfer)
+NEFT operates in half-hourly batches from 8 AM to 7 PM on weekdays.
+No transaction on bank holidays and Sundays.
+Minimum amount: INR 1. No maximum limit.
+Charges: Up to INR 10,000 - INR 2.50. INR 10,001 to INR 1 lakh - INR 5. Above INR 1 lakh - INR 15.
+Settlement: Not real-time, settled in batches.
+
+RTGS (Real Time Gross Settlement)
+RTGS available from 7 AM to 6 PM on weekdays.
+Minimum amount: INR 2,00,000. No maximum limit.
+Used for high-value transactions. Real-time settlement.
+Charges: INR 2 lakh to INR 5 lakh - INR 25. Above INR 5 lakh - INR 50.
+
+IMPS (Immediate Payment Service)
+IMPS is available 24x7 including holidays.
+Minimum amount: INR 1. Maximum: INR 5,00,000 per transaction.
+Real-time transfer using MMID or account number + IFSC.
+Charges: INR 5 flat for transactions up to INR 1 lakh.
+
+UPI (Unified Payments Interface)
+UPI transactions are free for personal use.
+Maximum per transaction: INR 1,00,000 (INR 2,00,000 for certain categories).
+Daily limit: INR 1,00,000 per UPI ID.
+Refund for failed UPI transactions: Within 5 business days.
+
+TRANSACTION LIMITS
+Cash deposit at branch: No limit, but above INR 50,000 requires PAN.
+ATM daily withdrawal limit: INR 40,000 for Classic card, INR 1,00,000 for Platinum.
+International transactions: Disabled by default, can be enabled via mobile app.
+Suspicious transaction threshold: Any single transaction above INR 10 lakh triggers reporting.
