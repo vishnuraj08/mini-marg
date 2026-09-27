@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+
+# FAISS index (generated at runtime, not committed)
+faiss_index/
+
+# AWS credentials (never commit these)
+.aws/
+
+# Terraform state (contains sensitive info)
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+
+# OS
+.DS_Store
+Thumbs.db
