@@ -1,0 +1,84 @@
+# config/rates.yaml
+# ALL numbers live here. Change rates here only — never edit .txt files for number changes.
+
+personal_loan:
+  min_amount: "INR 50,000"
+  max_amount: "INR 40,00,000"
+  interest_rate_min: "10.5%"
+  interest_rate_max: "18%"
+  tenure_min: "12"
+  tenure_max: "60"
+  processing_fee: "2%"
+  min_age: "21"
+  max_age: "60"
+  min_income_salaried: "INR 25,000"
+  min_income_self_employed: "INR 30,000"
+
+home_loan:
+  interest_rate_min: "8.5%"
+  interest_rate_max: "12%"
+  max_tenure_years: "30"
+  processing_fee_pct: "0.5%"
+  processing_fee_max: "INR 25,000"
+  ltv_above_75L: "75%"
+  min_amount: "INR 5,00,000"
+
+gold_loan:
+  interest_rate_min: "9%"
+  interest_rate_max: "13%"
+  ltv: "75%"
+  tenure_min_months: "3"
+  tenure_max_months: "12"
+  processing_fee: "1%"
+
+credit_score:
+  excellent_threshold: "750"
+  good_min: "700"
+  good_max: "749"
+  average_min: "650"
+  average_max: "699"
+  poor_threshold: "650"
+
+neft:
+  slab1_max: "INR 10,000"
+  slab1_charge: "INR 2.50"
+  slab2_max: "INR 1 lakh"
+  slab2_charge: "INR 5"
+  slab3_charge: "INR 15"
+  operating_hours: "8 AM to 7 PM"
+
+rtgs:
+  min_amount: "INR 2,00,000"
+  operating_hours: "7 AM to 6 PM"
+  slab1_max: "INR 5 lakh"
+  slab1_charge: "INR 25"
+  slab2_charge: "INR 50"
+
+imps:
+  max_per_transaction: "INR 5,00,000"
+  charge: "INR 5"
+  charge_limit: "INR 1 lakh"
+
+upi:
+  max_per_transaction: "INR 1,00,000"
+  daily_limit: "INR 1,00,000"
+  refund_days: "5"
+
+atm:
+  classic_daily_limit: "INR 40,000"
+  platinum_daily_limit: "INR 1,00,000"
+
+cash:
+  pan_required_above: "INR 50,000"
+  suspicious_threshold: "INR 10 lakh"
+
+kyc:
+  completion_months: "12"
+  high_risk_years: "2"
+  medium_risk_years: "8"
+  low_risk_years: "10"
+  vkyc_hours: "9 AM to 6 PM"
+  vkyc_days: "Monday to Saturday"
+
+aml:
+  cash_report_threshold: "INR 10 lakh"

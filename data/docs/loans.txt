@@ -1,0 +1,39 @@
+LOANS PRODUCT GUIDE - BFSI Banking Corp
+
+PERSONAL LOANS
+Personal loans are unsecured loans offered to salaried and self-employed individuals.
+Minimum loan amount: {personal_loan.min_amount}. Maximum loan amount: {personal_loan.max_amount}.
+Interest rate: {personal_loan.interest_rate_min} to {personal_loan.interest_rate_max} per annum depending on credit score.
+Tenure: {personal_loan.tenure_min} to {personal_loan.tenure_max} months.
+Processing fee: {personal_loan.processing_fee} of loan amount + GST.
+Eligibility: Minimum age {personal_loan.min_age} years, maximum age {personal_loan.max_age} years at loan maturity.
+Minimum monthly income: {personal_loan.min_income_salaried} for salaried, {personal_loan.min_income_self_employed} for self-employed.
+Documents required: PAN card, Aadhaar card, last 3 months salary slips, 6 months bank statement.
+
+HOME LOANS
+Home loans are secured loans against residential property.
+Minimum loan amount: {home_loan.min_amount}. Maximum: No upper limit subject to property valuation.
+Interest rate: {home_loan.interest_rate_min} to {home_loan.interest_rate_max} per annum. Floating rate linked to MCLR.
+Tenure: Up to {home_loan.max_tenure_years} years.
+Processing fee: {home_loan.processing_fee_pct} of loan amount maximum {home_loan.processing_fee_max}.
+LTV (Loan to Value): Up to {home_loan.ltv_above_75L} of property value for loans above INR 75 lakhs.
+Prepayment: No penalty on floating rate loans.
+
+GOLD LOANS
+Gold loans are secured against gold ornaments and coins.
+Interest rate: {gold_loan.interest_rate_min} to {gold_loan.interest_rate_max} per annum.
+Loan to value: Up to {gold_loan.ltv} of gold value as per RBI guidelines.
+Tenure: {gold_loan.tenure_min_months} to {gold_loan.tenure_max_months} months.
+Processing fee: {gold_loan.processing_fee} of loan amount.
+Repayment: Bullet payment or monthly EMI option available.
+
+CREDIT SCORE IMPACT
+Credit score above {credit_score.excellent_threshold}: Best interest rates, faster approval.
+Credit score {credit_score.good_min}-{credit_score.good_max}: Standard rates, normal processing.
+Credit score {credit_score.average_min}-{credit_score.average_max}: Higher rates, additional collateral may be required.
+Credit score below {credit_score.poor_threshold}: Loan may be rejected or requires guarantor.
+
+EMI CALCULATION
+EMI = P x r x (1+r)^n / ((1+r)^n - 1)
+Where P = Principal, r = monthly interest rate, n = number of months.
+Example: INR 5,00,000 personal loan at 12% for 36 months = EMI of INR 16,607.

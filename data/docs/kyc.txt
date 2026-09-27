@@ -2,28 +2,28 @@ KYC (KNOW YOUR CUSTOMER) GUIDELINES - BFSI Banking Corp
 
 KYC REQUIREMENTS
 KYC is mandatory for all bank account holders as per RBI regulations.
-KYC must be completed within 12 months of account opening for new customers.
-Existing customers must re-KYC every 2 years for high-risk, 8 years for medium-risk, 10 years for low-risk.
+KYC must be completed within {kyc.completion_months} months of account opening for new customers.
+Existing customers must re-KYC every {kyc.high_risk_years} years for high-risk, {kyc.medium_risk_years} years for medium-risk, {kyc.low_risk_years} years for low-risk.
 
 DOCUMENTS ACCEPTED FOR KYC
 Identity Proof (any one): PAN Card, Aadhaar Card, Passport, Voter ID, Driving License.
 Address Proof (any one): Aadhaar Card, Passport, Utility Bill (not older than 3 months), Bank Statement.
-PAN Card is mandatory for transactions above INR 50,000.
+PAN Card is mandatory for transactions above {cash.pan_required_above}.
 Aadhaar-based e-KYC is accepted for digital onboarding.
 
 VIDEO KYC (V-KYC)
 Video KYC allows customers to complete KYC remotely via video call.
 Customer must show original documents during video call.
-Available Monday to Saturday, 9 AM to 6 PM.
+Available {kyc.vkyc_days}, {kyc.vkyc_hours}.
 V-KYC is valid equivalent to in-person KYC as per RBI guidelines.
 
 KYC STATUS AND CONSEQUENCES
-Pending KYC: Account will be restricted after 12 months - only credits allowed, no debits.
+Pending KYC: Account will be restricted after {kyc.completion_months} months - only credits allowed, no debits.
 Expired KYC: Account frozen until KYC is updated.
 KYC rejection reasons: Blurry documents, mismatch in name/address, expired documents.
 
 AML (ANTI-MONEY LAUNDERING)
-Transactions above INR 10 lakh in cash must be reported to FIU-IND.
+Transactions above {aml.cash_report_threshold} in cash must be reported to FIU-IND.
 Suspicious transaction reports filed for unusual patterns.
 FATF high-risk countries list updated quarterly - enhanced due diligence required.
 PEP (Politically Exposed Persons) require additional verification and senior approval.
