@@ -1,0 +1,35 @@
+input:
+  max_length: 2000
+
+  blocked_patterns:
+    - name: sql_injection
+      pattern: '(\bDROP\b|\bDELETE\b|\bTRUNCATE\b|\bINSERT INTO\b|\bUNION SELECT\b)'
+      action: block
+      reason: "SQL injection pattern detected"
+
+    - name: script_injection
+      pattern: '<script.*?>.*?</script>|javascript:'
+      action: block
+      reason: "Script injection pattern detected"
+
+  blocked_topics:
+    - name: competitor_comparison
+      keywords: ["compare with competitor", "vs HDFC", "vs ICICI", "which bank is better"]
+      reason: "Competitor comparison queries are out of scope"
+
+    - name: illegal_activity
+      keywords: ["money laundering", "tax evasion", "fraud scheme", "black money"]
+      reason: "Query relates to illegal financial activity"
+
+    - name: personal_investment_advice
+      keywords: ["should I invest", "will stock go up", "guaranteed returns", "get rich"]
+      reason: "Personal investment advice is out of scope"
+
+output:
+  max_length: 5000
+
+  blocked_patterns:
+    - name: internal_system_info
+      pattern: '(system prompt|internal instruction|confidential|classified)'
+      action: block
+      reason: "Output contains internal system information"

@@ -1,0 +1,68 @@
+# PII Recognizer Configuration
+# Add new country recognizers here — no code changes needed
+# score: 0.0 to 1.0 (confidence level)
+
+recognizers:
+  # ── India ──────────────────────────────────────────────
+  - entity: IN_PAN
+    name: PAN Card
+    country: IN
+    pattern: '\b[A-Z]{5}[0-9]{4}[A-Z]\b'
+    score: 0.9
+
+  - entity: IN_AADHAAR
+    name: Aadhaar Number
+    country: IN
+    pattern: '\b\d{4}\s?\d{4}\s?\d{4}\b'
+    score: 0.85
+
+  - entity: IN_ACCOUNT
+    name: Bank Account Number
+    country: IN
+    pattern: '\b\d{9,18}\b'
+    score: 0.6
+
+  - entity: IN_PHONE
+    name: Indian Mobile Number
+    country: IN
+    pattern: '\b(\+91|0)?[6-9]\d{9}\b'
+    score: 0.9
+
+  - entity: IN_IFSC
+    name: IFSC Code
+    country: IN
+    pattern: '\b[A-Z]{4}0[A-Z0-9]{6}\b'
+    score: 0.95
+
+  # ── United Kingdom ─────────────────────────────────────
+  - entity: UK_NI
+    name: National Insurance Number
+    country: UK
+    pattern: '\b[A-Z]{2}\d{6}[A-Z]\b'
+    score: 0.9
+
+  - entity: UK_UTR
+    name: Unique Taxpayer Reference
+    country: UK
+    pattern: '\b\d{10}\b'
+    score: 0.7
+
+  # ── Singapore ──────────────────────────────────────────
+  - entity: SG_NRIC
+    name: Singapore NRIC/FIN
+    country: SG
+    pattern: '\b[STFG]\d{7}[A-Z]\b'
+    score: 0.95
+
+  # ── United States ──────────────────────────────────────
+  - entity: US_SSN
+    name: Social Security Number
+    country: US
+    pattern: '\b\d{3}-\d{2}-\d{4}\b'
+    score: 0.95
+
+  - entity: US_EIN
+    name: Employer Identification Number
+    country: US
+    pattern: '\b\d{2}-\d{7}\b'
+    score: 0.85

@@ -1,0 +1,16 @@
+# Don't copy these into the Docker image
+
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+faiss_index/
+.git/
+.gitignore
+terraform/
+.github/
+*.md
+Thumbs.db
+.DS_Store

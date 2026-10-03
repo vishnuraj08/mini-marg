@@ -8,11 +8,12 @@ main.py — FastAPI Application
   GET  /prompt-version  → which prompt version is currently active?
   POST /prompt-version  → switch to a different prompt version (v1/v2)
 
-WHY FASTAPI?
-  - Auto-generates interactive docs at /docs (Swagger UI)
-  - Pydantic validation: wrong input = clear error, not a crash
-  - Async support: can handle many requests without blocking
-  - Type hints = self-documenting code
+QUERY PIPELINE (5 layers):
+  1. Input Guardrail   → block injection / harmful / out-of-scope
+  2. PII Mask          → replace PAN/Aadhaar/names with deterministic tokens
+  3. RAG Agent         → intent → retrieve → generate
+  4. Output Guardrail  → block hallucinations / financial advice / leaks
+  5. PII Unmask        → restore original values in final answer
 """
 
 from fastapi import FastAPI, HTTPException
@@ -24,6 +25,8 @@ from pathlib import Path
 from app.rag import ingest
 from app.agent import run_agent
 from app.prompts import get_prompt, get_active_version
+from app.pii import mask_pii, unmask_pii, pii_report
+from app.guardrails import check_input, check_output, apply_output, GuardrailAction
 
 # ─────────────────────────────────────────────
 # APP INIT
@@ -42,13 +45,6 @@ PROMPTS_PATH = Path(__file__).parent.parent / "prompts.yaml"
 # ═══════════════════════════════════════════════════════════════
 
 class QueryRequest(BaseModel):
-    """
-    Input model for POST /query
-    
-    Pydantic validates this automatically:
-    - If 'query' is missing → 422 Unprocessable Entity (not a 500 crash)
-    - If 'query' is not a string → 422 with clear message
-    """
     query: str
 
     class Config:
@@ -58,16 +54,17 @@ class QueryRequest(BaseModel):
 
 
 class QueryResponse(BaseModel):
-    """Output model for POST /query"""
-    answer:         str
-    intent:         Optional[str]      = None    # "rag" or "calculator"
-    prompt_version: Optional[str]      = None    # "v1" or "v2"
-    messages:       Optional[list]     = None    # internal trace log
-    error:          Optional[str]      = None    # error if any
+    answer:           str
+    intent:           Optional[str]   = None
+    prompt_version:   Optional[str]   = None
+    messages:         Optional[list]  = None
+    error:            Optional[str]   = None
+    # New security fields
+    pii_detected:     Optional[bool]  = None   # was PII found in the query?
+    guardrail_warned: Optional[bool]  = None   # did output guardrail trigger a warning?
 
 
 class PromptSwitchRequest(BaseModel):
-    """Input model for POST /prompt-version"""
     version: str
 
     class Config:
@@ -80,17 +77,6 @@ class PromptSwitchRequest(BaseModel):
 
 @app.get("/health")
 def health_check():
-    """
-    Simple liveness check.
-    
-    Used by:
-    - AWS ALB (load balancer): pings /health every 30s to know if instance is alive
-    - Docker healthcheck: container restarts if this fails
-    - Monitoring: alerts if /health stops returning 200
-    
-    Rule: this endpoint must NEVER require a database or LLM call.
-    It should respond in <10ms even if everything else is broken.
-    """
     return {
         "status": "healthy",
         "service": "mini-marg",
@@ -104,21 +90,8 @@ def health_check():
 
 @app.post("/ingest")
 def ingest_documents():
-    """
-    Trigger the ingestion pipeline:
-    load docs → inject config → chunk → embed → build FAISS + BM25 → save
-    
-    WHEN TO CALL THIS:
-    - First time setup (before any /query calls)
-    - After editing documents in data/docs/
-    - After changing rates in config/rates.yaml
-    
-    This takes ~30-60 seconds (embedding all chunks with Ollama).
-    In production you'd run this as a background job, not a synchronous endpoint.
-    For our project, synchronous is fine.
-    """
     try:
-        result = ingest()          # calls rag.py ingest()
+        result = ingest()
         return {
             "status": "success",
             "message": "Documents ingested and index built successfully.",
@@ -135,39 +108,86 @@ def ingest_documents():
 @app.post("/query", response_model=QueryResponse)
 def query_agent(request: QueryRequest):
     """
-    Main endpoint — runs the LangGraph agent.
-    
-    FLOW:
-    1. Receive user query
-    2. Pass to run_agent() in agent.py
-    3. Agent: classify intent → call tool → generate answer
-    4. Return structured response
-    
-    EXAMPLE REQUEST:
-      POST /query
-      {"query": "What documents do I need for KYC?"}
-    
-    EXAMPLE RESPONSE:
-      {
-        "answer": "For KYC you need...",
-        "intent": "rag",
-        "prompt_version": "v2",
-        "messages": ["INTENT CLASSIFIED: rag", "TOOL CALLED: rag_tool", ...]
-      }
+    5-layer secure query pipeline:
+
+    Layer 1 — INPUT GUARDRAIL
+      Check for prompt injection, blocked topics, SQL injection, length limits.
+      If blocked → return 400 immediately, never reach the LLM.
+
+    Layer 2 — PII MASKING
+      Replace PAN, Aadhaar, names, phone numbers with deterministic tokens.
+      The LLM never sees raw PII — only tokens like [IN_PAN_A3F2B891].
+      Deterministic = same value → same token → FAISS vectors stay consistent.
+
+    Layer 3 — RAG AGENT
+      Intent classification → tool call → retrieval → LLM generation.
+      Runs on the masked query, produces a masked answer.
+
+    Layer 4 — OUTPUT GUARDRAIL
+      Check LLM response for hallucination signals, definitive financial advice,
+      internal system info leakage. Block or append disclaimer as needed.
+
+    Layer 5 — PII UNMASKING
+      Restore original PII values in the final answer using the token mapping
+      from Layer 2. User sees their data back, LLM never stored it.
     """
     if not request.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
 
+    # ── Layer 1: Input Guardrail ──────────────────────────────
+    input_check = check_input(request.query)
+    if input_check.action == GuardrailAction.BLOCK:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Query blocked by safety guardrail: {input_check.reason}"
+        )
+
+    # ── Layer 2: PII Masking ──────────────────────────────────
+    masked_query, pii_mapping = mask_pii(request.query)
+    pii_detected = len(pii_mapping) > 0
+
+    # Audit log — log what PII types were found, never log actual values
+    if pii_detected:
+        audit = pii_report(request.query)
+        detected_types = [r["entity_type"] for r in audit]
+        print(f"[PII AUDIT] Detected entities: {detected_types} — masked before LLM call")
+
+    # ── Layer 3: RAG Agent ────────────────────────────────────
     try:
-        result = run_agent(request.query)
-        return QueryResponse(**result)
-    except FileNotFoundError as e:
+        result = run_agent(masked_query)
+    except FileNotFoundError:
         raise HTTPException(
             status_code=503,
             detail="Knowledge base not ready. Call POST /ingest first."
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent failed: {str(e)}")
+
+    raw_answer = result.get("answer", "")
+
+    # ── Layer 4: Output Guardrail ─────────────────────────────
+    output_check = check_output(raw_answer)
+
+    if output_check.action == GuardrailAction.BLOCK:
+        final_answer = f"Response blocked by safety policy: {output_check.reason}"
+        guardrail_warned = False
+    else:
+        final_answer = apply_output(raw_answer, output_check)
+        guardrail_warned = output_check.action.value in ("warn", "redact")
+
+    # ── Layer 5: PII Unmasking ────────────────────────────────
+    if pii_mapping:
+        final_answer = unmask_pii(final_answer, pii_mapping)
+
+    return QueryResponse(
+        answer=final_answer,
+        intent=result.get("intent"),
+        prompt_version=result.get("prompt_version"),
+        messages=result.get("messages"),
+        error=result.get("error"),
+        pii_detected=pii_detected,
+        guardrail_warned=guardrail_warned,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -176,20 +196,12 @@ def query_agent(request: QueryRequest):
 
 @app.get("/prompt-version")
 def get_current_prompt_version():
-    """
-    Returns the currently active prompt version and its metadata.
-    
-    Useful for:
-    - Knowing which version is live in production
-    - A/B testing: check which version a specific instance is using
-    - Debugging: "why did the answer format change?" → check prompt version
-    """
     try:
         prompt = get_prompt()
         return {
             "active_version": prompt["version"],
             "name":           prompt["name"],
-            "system_preview": prompt["system"][:100] + "...",    # first 100 chars
+            "system_preview": prompt["system"][:100] + "...",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -201,26 +213,10 @@ def get_current_prompt_version():
 
 @app.post("/prompt-version")
 def switch_prompt_version(request: PromptSwitchRequest):
-    """
-    Switch the active prompt version by updating prompts.yaml.
-    
-    THIS IS PROMPT VERSIONING IN ACTION:
-    - POST /prompt-version {"version": "v1"}  → rolls back to v1
-    - POST /prompt-version {"version": "v2"}  → switches to v2
-    - No code change, no restart needed
-    - Takes effect on the NEXT /query call immediately
-    
-    In production this would:
-    - Require auth (only admins can switch prompts)
-    - Log the switch with timestamp and user ID
-    - Potentially trigger an evaluation run to compare versions
-    """
     try:
-        # Load current prompts.yaml
         with open(PROMPTS_PATH) as f:
             data = yaml.safe_load(f)
 
-        # Validate the requested version exists
         available_versions = list(data["prompts"].keys())
         if request.version not in available_versions:
             raise HTTPException(
@@ -229,20 +225,16 @@ def switch_prompt_version(request: PromptSwitchRequest):
             )
 
         old_version = data["active_version"]
-
-        # Update active_version
         data["active_version"] = request.version
 
-        # Write back to prompts.yaml
         with open(PROMPTS_PATH, "w") as f:
             yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
 
         return {
-            "status":      "success",
+            "status":        "success",
             "switched_from": old_version,
             "switched_to":   request.version,
-            "message":     f"Active prompt switched from {old_version} to {request.version}. "
-                           f"Next /query call will use {request.version}."
+            "message":       f"Active prompt switched from {old_version} to {request.version}."
         }
 
     except HTTPException:

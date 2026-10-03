@@ -7,6 +7,7 @@ FLOW:
 """
 
 import os
+import re
 import json
 import yaml
 import faiss
@@ -36,7 +37,13 @@ BM25_FILE   = INDEX_DIR / "bm25.pkl"                # BM25 model (for hybrid sea
 # ─────────────────────────────────────────────
 # nomic-embed-text produces 768-dim vectors
 # OllamaEmbeddings calls the local Ollama server at http://localhost:11434
+#embeddings_model = OllamaEmbeddings(model="nomic-embed-text")
 embeddings_model = OllamaEmbeddings(model="nomic-embed-text")
+
+##embeddings_model = OllamaEmbeddings(
+##    model="nomic-embed-text",
+##    base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+##)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -89,12 +96,27 @@ def load_documents() -> List[Dict]:
             template = f.read()
 
         # Inject all {placeholder} values from rates.yaml
-        try:
-            content = template.format(**flat_config)
-        except KeyError as e:
-            # If a placeholder has no matching config key, warn and use raw text
-            print(f"WARNING: Missing config key {e} in {txt_file.name}, using raw text")
-            content = template
+        
+
+        def inject(template_str, config):
+            """
+            Regex-based template injection.
+            Finds every {some.key} pattern and replaces it with config value.
+            Falls back to original placeholder if key not found.
+            
+            WHY NOT str.format()?
+            Python's format() treats dots as attribute access: {a.b} → obj_a.b
+            Our keys have dots as separators: "personal_loan.min_amount"
+            format() can't find these → KeyError → raw text returned.
+            Regex looks up the full key string directly in the dict → works.
+            """
+            def replacer(match):
+                key = match.group(1)                          # e.g. "personal_loan.min_amount"
+                return config.get(key, match.group(0))        # replace or leave as-is
+
+            return re.sub(r'\{([^}]+)\}', replacer, template_str)
+
+        content = inject(template, flat_config)
 
         documents.append({
             "content": content,
@@ -103,6 +125,7 @@ def load_documents() -> List[Dict]:
         print(f"  Loaded: {txt_file.name} ({len(content)} chars)")
 
     return documents
+
 
 
 # ═══════════════════════════════════════════════════════════════
