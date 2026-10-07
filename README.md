@@ -1,4 +1,3 @@
-
 # Mini-MARG
 
 A prototype implementation of a production-grade AI/ML system covering core GenAI concepts end-to-end.
@@ -38,12 +37,3 @@ Python 3.11 · FastAPI · LangChain · LangGraph · Ollama · FAISS · Presidio 
 docker build -t mini-marg:latest .
 docker run -d --name mini-marg -p 8000:8000 --add-host=host.docker.internal:host-gateway mini-marg:latest
 # Open http://localhost:8000/docs
-\`\`\`
-"@ | Out-File -FilePath README.md -Encoding utf8
-
-git add README.md
-git commit -m "docs: add README with project overview and roadmap
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_011K8cyoosbAd6UXDk2UfzSr"
-git push origin main
